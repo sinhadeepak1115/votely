@@ -9,23 +9,37 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
   ],
+
   callbacks: {
     async signIn(params) {
-      console.log(params);
       try {
-        const user = await prisma.user.create({
-          data: {
+        const existingUser = await prisma.user.findUnique({
+          where: {
             email: params.user.email,
-            name: params.user.name,
-            provider: "GOOGLE",
-            image: params.user.image,
           },
         });
-        console.log(user);
+        console.log(existingUser.id);
+        if (!existingUser) {
+          const user = await prisma.user.create({
+            data: {
+              email: params.user.email,
+              name: params.user.name,
+              provider: "GOOGLE",
+              image: params.user.image,
+            },
+          });
+          console.log(user.id);
+        }
       } catch (e) {
         console.error(e);
       }
       return true;
+    },
+    async redirect({ url, baseUrl }) {
+      return baseUrl;
+    },
+    async session({ session, token }) {
+      return session;
     },
   },
 };
